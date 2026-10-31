@@ -27,6 +27,17 @@ jobs:
 
       - run: npm ci
 
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate
+        run: |
+          npm run check
+          npm run lint
+          npm run format:check
+          npm test
+          npm run test:e2e
+
       - name: Build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/

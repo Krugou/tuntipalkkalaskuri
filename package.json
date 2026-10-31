@@ -9,7 +9,11 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "lint": "oxlint --deny-warnings src e2e vite.config.ts svelte.config.js playwright.config.ts pwa-assets.config.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
@@ -18,10 +22,16 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/svelte": "^5.4.2",
     "@testing-library/user-event": "^14.6.8",
+    "@types/node": "^26.6.6",
     "@vite-pwa/assets-generator": "^2.0.0",
     "jsdom": "^29.1.1",
+    "oxlint": "^1.90.0",
+    "prettier": "^3.9.10",
+    "prettier-plugin-svelte": "^4.1.1",
     "svelte": "^5.57.3",
+    "svelte-check": "^4.7.7",
     "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.3",
     "vite": "^6.4.5",
     "vite-plugin-pwa": "^2.0.0",
     "vitest": "^4.1.12"

@@ -1,13 +1,19 @@
 import { expect, test } from '@playwright/test';
 
 test('serves a valid web manifest with icons', async ({ page, request }) => {
+  interface Manifest {
+    name: string;
+    display: string;
+    icons: Array<{ sizes: string; purpose?: string; src: string }>;
+  }
+
   await page.goto('/');
   const href = await page.locator('link[rel="manifest"]').getAttribute('href');
-  expect(href).toBeTruthy();
+  if (!href) throw new Error('The page does not link to a web manifest.');
 
   const res = await request.get(new URL(href, page.url()).toString());
   expect(res.ok()).toBe(true);
-  const manifest = await res.json();
+  const manifest = (await res.json()) as Manifest;
 
   expect(manifest.name).toBe('Hourly Wage Calculator');
   expect(manifest.display).toBe('standalone');
@@ -26,15 +32,23 @@ test('links favicon and apple touch icon', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveCount(1);
   await expect(page.locator('link[rel="icon"]')).not.toHaveCount(0);
-  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#4f46e5');
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
+    'content',
+    '#4f46e5',
+  );
 });
 
-test('registers a service worker and works offline', async ({ page, context }) => {
+test('registers a service worker and works offline', async ({
+  page,
+  context,
+}) => {
   await page.goto('/');
   await page.evaluate(() => navigator.serviceWorker.ready);
   // Reload so the page is controlled by the service worker before going offline.
   await page.reload();
-  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => !!navigator.serviceWorker.controller))
+    .toBe(true);
 
   await context.setOffline(true);
   await page.reload();
