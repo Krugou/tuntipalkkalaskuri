@@ -1,6 +1,7 @@
 export type HoursPeriod = 'weekly' | 'monthly';
 export type Language = 'en' | 'fi';
 export type NetEstimateMode = 'finnish-2026' | 'flat-rate';
+export type NetTargetPeriod = 'monthly' | 'hourly';
 
 export const WEEKS_PER_MONTH = 52 / 12;
 export const FINNISH_TAX_EXAMPLE_MAX_INCOME = 70_000;
@@ -23,6 +24,14 @@ export interface FinnishNetPayEstimate extends NetPayEstimate {
   annualGross: number;
   annualTax: number;
   annualEmployeeContributions: number;
+}
+
+export interface GrossPayTarget {
+  grossMonthly: number;
+  grossYearly: number;
+  grossHourly: number;
+  targetNetMonthly: number;
+  targetNetHourly: number;
 }
 
 // Vero's 2026 Helsinki wage examples; linear interpolation is only an estimate.
@@ -130,6 +139,80 @@ export function estimateFinnishNetPay2026(
     hourlyNet: monthlyNet / monthlyHours,
     yearlyNet,
   };
+}
+
+export function calculateGrossForNetTarget(
+  targetNet: number,
+  targetPeriod: NetTargetPeriod,
+  hours: number,
+  hoursPeriod: HoursPeriod,
+  estimateMode: NetEstimateMode,
+  taxRate?: number,
+): GrossPayTarget | null {
+  if (!Number.isFinite(targetNet) || targetNet <= 0) return null;
+  if (!Number.isFinite(hours) || hours <= 0) return null;
+
+  const monthlyHours =
+    hoursPeriod === 'weekly' ? hours * WEEKS_PER_MONTH : hours;
+  if (!Number.isFinite(monthlyHours) || monthlyHours <= 0) return null;
+
+  const targetNetMonthly =
+    targetPeriod === 'hourly' ? targetNet * monthlyHours : targetNet;
+  if (!Number.isFinite(targetNetMonthly) || targetNetMonthly <= 0) return null;
+
+  let grossMonthly: number;
+  if (estimateMode === 'flat-rate') {
+    if (
+      taxRate === undefined ||
+      !Number.isFinite(taxRate) ||
+      taxRate < 0 ||
+      taxRate >= 100
+    ) {
+      return null;
+    }
+    grossMonthly = targetNetMonthly / (1 - taxRate / 100);
+  } else {
+    const upperBoundMonthly = FINNISH_TAX_EXAMPLE_MAX_INCOME / 12;
+    if (
+      targetNetMonthly >
+      calculateFinnishMonthlyNet(upperBoundMonthly) + 1e-8
+    ) {
+      return null;
+    }
+
+    let low = 0;
+    let high = upperBoundMonthly;
+    for (let iteration = 0; iteration < 80; iteration += 1) {
+      const midpoint = (low + high) / 2;
+      if (calculateFinnishMonthlyNet(midpoint) < targetNetMonthly) {
+        low = midpoint;
+      } else {
+        high = midpoint;
+      }
+    }
+    grossMonthly = (low + high) / 2;
+  }
+
+  if (!Number.isFinite(grossMonthly) || grossMonthly <= 0) return null;
+
+  return {
+    grossMonthly,
+    grossYearly: grossMonthly * 12,
+    grossHourly: grossMonthly / monthlyHours,
+    targetNetMonthly,
+    targetNetHourly: targetNetMonthly / monthlyHours,
+  };
+}
+
+function calculateFinnishMonthlyNet(monthlyGross: number): number {
+  const annualGross = monthlyGross * 12;
+  const annualTax = interpolateFinnishTax2026(annualGross);
+  const annualEmployeeContributions =
+    annualGross * FINNISH_EMPLOYEE_CONTRIBUTION_RATE;
+  return Math.max(
+    0,
+    (annualGross - annualTax - annualEmployeeContributions) / 12,
+  );
 }
 
 function interpolateFinnishTax2026(annualGross: number): number {

@@ -70,6 +70,21 @@ test('estimates net pay only when enabled and explains the assumption', async ({
   await expect(page.getByRole('alert')).toContainText('from 0 to 100');
 });
 
+test('calculates gross salary for desired hourly and monthly net amounts', async ({
+  page,
+}) => {
+  await page
+    .getByLabel('Find the gross salary needed for a net target')
+    .check();
+  await expect(page.getByLabel('Target take-home pay')).toHaveValue('20');
+  await expect(page.getByTestId('reverse-gross-hourly')).toContainText('€28.');
+
+  await page.getByLabel('Target take-home pay').fill('3500');
+  await page.getByLabel('Target period').selectOption('monthly');
+  await expect(page.getByTestId('reverse-gross-monthly')).toContainText('€5,');
+  await expect(page.getByTestId('reverse-gross-yearly')).toContainText('€60,');
+});
+
 test('shares or copies a concise result', async ({ page }) => {
   await page.getByRole('button', { name: /share \/ copy result/i }).click();
   await expect(page.getByRole('status')).toContainText(

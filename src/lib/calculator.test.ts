@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   WEEKS_PER_MONTH,
   calculateHourlyWage,
+  calculateGrossForNetTarget,
   estimateFinnishNetPay2026,
   estimateNetPay,
   FINNISH_EMPLOYEE_CONTRIBUTION_RATE,
@@ -151,6 +152,81 @@ describe('estimateFinnishNetPay2026', () => {
   it('rejects invalid salary and working hours', () => {
     expect(estimateFinnishNetPay2026(0, 40, 'weekly')).toBeNull();
     expect(estimateFinnishNetPay2026(2000, 0, 'weekly')).toBeNull();
+  });
+});
+
+describe('calculateGrossForNetTarget', () => {
+  it('inverts the Finnish estimate for a target hourly net wage', () => {
+    const gross = calculateGrossForNetTarget(
+      20,
+      'hourly',
+      37.5,
+      'weekly',
+      'finnish-2026',
+    );
+    expect(gross).not.toBeNull();
+    if (!gross) throw new Error('Expected a Finnish gross-pay target.');
+    const estimate = estimateFinnishNetPay2026(
+      gross.grossMonthly,
+      37.5,
+      'weekly',
+    );
+    expect(estimate?.hourlyNet).toBeCloseTo(20, 6);
+    expect(gross.targetNetHourly).toBe(20);
+  });
+
+  it('inverts the Finnish estimate for a target monthly net wage', () => {
+    const gross = calculateGrossForNetTarget(
+      3500,
+      'monthly',
+      37.5,
+      'weekly',
+      'finnish-2026',
+    );
+    expect(gross).not.toBeNull();
+    if (!gross) throw new Error('Expected a Finnish gross-pay target.');
+    const estimate = estimateFinnishNetPay2026(
+      gross.grossMonthly,
+      37.5,
+      'weekly',
+    );
+    expect(estimate?.monthlyNet).toBeCloseTo(3500, 6);
+    expect(gross.grossYearly).toBeCloseTo(gross.grossMonthly * 12, 8);
+  });
+
+  it('calculates exact reverse targets with the custom flat tax rate', () => {
+    const hourly = calculateGrossForNetTarget(
+      20,
+      'hourly',
+      40,
+      'weekly',
+      'flat-rate',
+      25,
+    );
+    expect(hourly?.grossHourly).toBeCloseTo(20 / 0.75, 8);
+    expect(hourly?.targetNetMonthly).toBeCloseTo(20 * 40 * WEEKS_PER_MONTH, 8);
+
+    const monthly = calculateGrossForNetTarget(
+      3500,
+      'monthly',
+      40,
+      'weekly',
+      'flat-rate',
+      25,
+    );
+    expect(monthly?.grossMonthly).toBeCloseTo(3500 / 0.75, 8);
+  });
+
+  it('rejects invalid targets and unsupported Finnish net amounts', () => {
+    expect(
+      calculateGrossForNetTarget(0, 'hourly', 40, 'weekly', 'finnish-2026'),
+    ).toBeNull();
+    expect(
+      calculateGrossForNetTarget(4000, 'monthly', 40, 'weekly', 'finnish-2026'),
+    ).toBeNull();
+    expect(
+      calculateGrossForNetTarget(100, 'hourly', 40, 'weekly', 'flat-rate', 100),
+    ).toBeNull();
   });
 });
 

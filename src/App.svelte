@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import {
     calculateHourlyWage,
+    calculateGrossForNetTarget,
     estimateFinnishNetPay2026,
     estimateNetPay,
     FINNISH_TAX_EXAMPLE_MAX_INCOME,
@@ -12,6 +13,7 @@
     type HoursPeriod,
     type Language,
     type NetEstimateMode,
+    type NetTargetPeriod,
   } from './lib/calculator';
   import { loadPreferences, savePreferences } from './lib/preferences';
 
@@ -25,6 +27,9 @@
   let taxRate = $state(initial.taxRate);
   let showNetEstimate = $state(initial.showNetEstimate);
   let estimateMode = $state<NetEstimateMode>(initial.estimateMode);
+  let showReverseMode = $state(initial.showReverseMode);
+  let netTarget = $state(initial.netTarget);
+  let netTargetPeriod = $state<NetTargetPeriod>(initial.netTargetPeriod);
   let language = $state<Language>(initial.language);
   let dark = $state(document.documentElement.classList.contains('dark'));
   let storageWarning = $state(!loaded.storageAvailable);
@@ -75,6 +80,21 @@
       estimatedNetMonth: 'Estimated net per month',
       estimatedNetHour: 'Estimated net per hour',
       estimatedNetYear: 'Estimated net per year',
+      reverseMode: 'Find the gross salary needed for a net target',
+      netTargetLabel: 'Target take-home pay',
+      targetHourly: 'Per hour',
+      targetMonthly: 'Per month',
+      targetPeriod: 'Target period',
+      grossRequiredMonthly: 'Required gross per month',
+      grossRequiredYearly: 'Required gross per year',
+      grossRequiredHourly: 'Required gross per hour',
+      reverseTargetError: 'Enter a valid target amount greater than zero.',
+      reverseTargetAboveLimit:
+        'This target is above the Finnish estimate range. Reduce the target or use the official Vero calculator.',
+      reverseFlatRateLimit:
+        'A 100% flat tax rate cannot produce a finite gross target.',
+      reverseGrossLimit:
+        'The gross salary needed is outside the supported Finnish estimate range.',
       estimateCaveat:
         'This custom flat-rate estimate is not a Finnish tax calculation or tax advice.',
       methodology:
@@ -135,6 +155,21 @@
       estimatedNetMonth: 'Arvio netosta kuukaudessa',
       estimatedNetHour: 'Arvio netosta tunnissa',
       estimatedNetYear: 'Arvio netosta vuodessa',
+      reverseMode: 'Laske nettopalkkatavoitteen vaatima bruttopalkka',
+      netTargetLabel: 'Tavoiteltu nettopalkka',
+      targetHourly: 'Tunnissa',
+      targetMonthly: 'Kuukaudessa',
+      targetPeriod: 'Tavoitteen jakso',
+      grossRequiredMonthly: 'Tarvittava brutto kuukaudessa',
+      grossRequiredYearly: 'Tarvittava brutto vuodessa',
+      grossRequiredHourly: 'Tarvittava brutto tunnissa',
+      reverseTargetError: 'Anna kelvollinen nollaa suurempi tavoitesumma.',
+      reverseTargetAboveLimit:
+        'Tavoite ylittää suomalaisen arvion tulorajan. Pienennä tavoitetta tai käytä Verohallinnon laskuria.',
+      reverseFlatRateLimit:
+        '100 % tasaveroprosentilla ei voida laskea äärellistä bruttopalkkaa.',
+      reverseGrossLimit:
+        'Tarvittava bruttopalkka ylittää suomalaisen arvion tulorajan.',
       estimateCaveat:
         'Tämä itse valittuun tasaveroprosenttiin perustuva arvio ei ole Suomen verolaskelma eikä veroneuvontaa.',
       methodology:
@@ -160,6 +195,7 @@
   const hoursValue = $derived(parsePositiveNumber(hours));
   const yearlyValue = $derived(parsePositiveNumber(yearly));
   const taxRateValue = $derived(parseTaxRate(taxRate));
+  const netTargetValue = $derived(parsePositiveNumber(netTarget));
 
   const result = $derived(
     salaryValue !== null && hoursValue !== null
@@ -200,15 +236,39 @@
       salaryValue !== null &&
       salaryValue * 12 > FINNISH_TAX_EXAMPLE_MAX_INCOME,
   );
+  const taxRateError = $derived(
+    (showNetEstimate || showReverseMode) &&
+      estimateMode === 'flat-rate' &&
+      taxRateValue === null
+      ? copy.invalidTax
+      : '',
+  );
+  const reverseTarget = $derived(
+    showReverseMode && netTargetValue !== null && hoursValue !== null
+      ? calculateGrossForNetTarget(
+          netTargetValue,
+          netTargetPeriod,
+          hoursValue,
+          period,
+          estimateMode,
+          taxRateValue ?? undefined,
+        )
+      : null,
+  );
+  const reverseTargetError = $derived(
+    showReverseMode && netTargetValue === null ? copy.reverseTargetError : '',
+  );
+  const reverseTargetUnavailable = $derived(
+    showReverseMode &&
+      netTargetValue !== null &&
+      hoursValue !== null &&
+      taxRateError === '' &&
+      reverseTarget === null,
+  );
 
   const salaryError = $derived(getPositiveInputError(salary, copy.salaryField));
   const hoursError = $derived(getPositiveInputError(hours, copy.hoursField));
   const yearlyError = $derived(getPositiveInputError(yearly, copy.yearlyField));
-  const taxRateError = $derived(
-    showNetEstimate && estimateMode === 'flat-rate' && taxRateValue === null
-      ? copy.invalidTax
-      : '',
-  );
 
   const inputClass =
     'w-full rounded-lg border border-slate-300 bg-white text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 py-2.5 px-3 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-500/40';
@@ -278,6 +338,9 @@
         taxRate,
         showNetEstimate,
         estimateMode,
+        showReverseMode,
+        netTarget,
+        netTargetPeriod,
         language,
       })
     ) {
@@ -521,8 +584,16 @@
             />
             <span>{copy.enableEstimate}</span>
           </label>
+          <label class="mt-3 flex cursor-pointer items-start gap-3 text-sm">
+            <input
+              type="checkbox"
+              bind:checked={showReverseMode}
+              class="mt-0.5 size-4 accent-indigo-600"
+            />
+            <span>{copy.reverseMode}</span>
+          </label>
 
-          {#if showNetEstimate}
+          {#if showNetEstimate || showReverseMode}
             <div class="mt-4">
               <label for="estimate-mode" class={labelClass}>
                 {copy.estimateMode}
@@ -600,7 +671,7 @@
                 </div>
               {/if}
 
-              {#if finnishEstimate}
+              {#if showNetEstimate && finnishEstimate}
                 <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
                   <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
                     <dt class="text-slate-500 dark:text-slate-400">
@@ -624,7 +695,7 @@
                 </dl>
               {/if}
 
-              {#if netEstimate}
+              {#if showNetEstimate && netEstimate}
                 <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
                   <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
                     <dt class="text-slate-500 dark:text-slate-400">
@@ -653,6 +724,105 @@
                     </dd>
                   </div>
                 </dl>
+              {/if}
+
+              {#if showReverseMode}
+                <div
+                  class="mt-5 border-t border-slate-200 pt-4 dark:border-slate-700"
+                >
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label for="net-target" class={labelClass}>
+                        {copy.netTargetLabel}
+                      </label>
+                      <input
+                        id="net-target"
+                        type="text"
+                        inputmode="decimal"
+                        bind:value={netTarget}
+                        aria-invalid={Boolean(reverseTargetError)}
+                        aria-describedby={reverseTargetError
+                          ? 'reverse-target-error'
+                          : undefined}
+                        class={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label for="net-target-period" class={labelClass}>
+                        {copy.targetPeriod}
+                      </label>
+                      <select
+                        id="net-target-period"
+                        bind:value={netTargetPeriod}
+                        class={inputClass}
+                      >
+                        <option value="hourly">{copy.targetHourly}</option>
+                        <option value="monthly">{copy.targetMonthly}</option>
+                      </select>
+                    </div>
+                  </div>
+                  {#if reverseTargetError}
+                    <p
+                      id="reverse-target-error"
+                      class={errorClass}
+                      role="alert"
+                    >
+                      {reverseTargetError}
+                    </p>
+                  {/if}
+                  {#if reverseTargetUnavailable}
+                    <p class={errorClass} role="alert">
+                      {estimateMode === 'flat-rate' && taxRateValue === 100
+                        ? copy.reverseFlatRateLimit
+                        : estimateMode === 'finnish-2026'
+                          ? copy.reverseTargetAboveLimit
+                          : copy.reverseGrossLimit}
+                    </p>
+                  {/if}
+                  {#if reverseTarget}
+                    <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                      <div
+                        class="rounded-lg bg-indigo-50 p-3 dark:bg-indigo-950/50"
+                      >
+                        <dt class="text-slate-600 dark:text-slate-300">
+                          {copy.grossRequiredMonthly}
+                        </dt>
+                        <dd
+                          class="font-semibold text-slate-900 dark:text-white"
+                          data-testid="reverse-gross-monthly"
+                        >
+                          {formatEuro(reverseTarget.grossMonthly, language)}
+                        </dd>
+                      </div>
+                      <div
+                        class="rounded-lg bg-indigo-50 p-3 dark:bg-indigo-950/50"
+                      >
+                        <dt class="text-slate-600 dark:text-slate-300">
+                          {copy.grossRequiredHourly}
+                        </dt>
+                        <dd
+                          class="font-semibold text-slate-900 dark:text-white"
+                          data-testid="reverse-gross-hourly"
+                        >
+                          {formatEuro(reverseTarget.grossHourly, language)}
+                        </dd>
+                      </div>
+                      <div
+                        class="col-span-2 rounded-lg bg-indigo-50 p-3 dark:bg-indigo-950/50"
+                      >
+                        <dt class="text-slate-600 dark:text-slate-300">
+                          {copy.grossRequiredYearly}
+                        </dt>
+                        <dd
+                          class="font-semibold text-slate-900 dark:text-white"
+                          data-testid="reverse-gross-yearly"
+                        >
+                          {formatEuro(reverseTarget.grossYearly, language)}
+                        </dd>
+                      </div>
+                    </dl>
+                  {/if}
+                </div>
               {/if}
             </div>
           {/if}

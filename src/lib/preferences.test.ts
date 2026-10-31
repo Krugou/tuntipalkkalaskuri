@@ -17,6 +17,9 @@ describe('calculator preferences', () => {
       taxRate: '27',
       showNetEstimate: true,
       estimateMode: 'flat-rate' as const,
+      showReverseMode: true,
+      netTarget: '20',
+      netTargetPeriod: 'hourly' as const,
       language: 'fi' as const,
     };
 
@@ -27,12 +30,19 @@ describe('calculator preferences', () => {
   it('ignores malformed and unsupported saved values', () => {
     localStorage.setItem(
       PREFERENCES_KEY,
-      JSON.stringify({ salary: 3200, period: 'yearly' }),
+      JSON.stringify({
+        salary: 3200,
+        period: 'yearly',
+        netTargetPeriod: 'yearly',
+        estimateMode: 'invalid',
+      }),
     );
     const loaded = loadPreferences();
     expect(loaded.storageAvailable).toBe(true);
     expect(loaded.preferences.salary).toBe('2000');
     expect(loaded.preferences.period).toBe('weekly');
+    expect(loaded.preferences.estimateMode).toBe('finnish-2026');
+    expect(loaded.preferences.netTargetPeriod).toBe('hourly');
   });
 
   it('falls back safely when stored JSON is malformed', () => {

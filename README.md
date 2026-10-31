@@ -16,6 +16,11 @@ and use
 for a personal estimate. Calculator inputs remain in local browser storage;
 the app has no backend or API.
 
+Enable reverse mode to estimate the gross monthly salary needed to reach a
+take-home target per hour or month. It uses the same tax method and working
+hours as the net-pay estimate; the Finnish estimate is available only within
+the published example range.
+
 ## Development
 
 ```bash

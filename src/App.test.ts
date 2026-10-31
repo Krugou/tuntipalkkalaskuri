@@ -123,6 +123,62 @@ describe('App', () => {
     ).toHaveAttribute('href', expect.stringContaining('vero.fi'));
   });
 
+  it('calculates gross pay needed for an hourly Finnish net target', async () => {
+    const user = userEvent.setup();
+    render(App);
+    await user.click(
+      screen.getByLabelText(/find the gross salary needed for a net target/i),
+    );
+    expect(screen.getByLabelText(/target take-home pay/i)).toHaveValue('20');
+    expect(screen.getByLabelText(/target period/i)).toHaveValue('hourly');
+    expect(screen.getByTestId('reverse-gross-hourly')).toHaveTextContent(
+      /€\s?28[,.]0\d/,
+    );
+    expect(screen.getByTestId('reverse-gross-monthly').textContent).toMatch(
+      /€\s?4[,.]5\d{2}/,
+    );
+  });
+
+  it('calculates gross pay needed for a monthly net target', async () => {
+    const user = userEvent.setup();
+    render(App);
+    await user.click(
+      screen.getByLabelText(/find the gross salary needed for a net target/i),
+    );
+    await user.clear(screen.getByLabelText(/target take-home pay/i));
+    await user.type(screen.getByLabelText(/target take-home pay/i), '3500');
+    await user.selectOptions(
+      screen.getByLabelText(/target period/i),
+      'monthly',
+    );
+    expect(screen.getByTestId('reverse-gross-monthly')).toHaveTextContent(
+      /€\s?5[,.]\d{3}/,
+    );
+    expect(screen.getByTestId('reverse-gross-yearly')).toHaveTextContent(
+      /€\s?\d{2},\d{3}/,
+    );
+  });
+
+  it('keeps reverse flat-rate mode usable without enabling the forward estimate', async () => {
+    const user = userEvent.setup();
+    render(App);
+    await user.click(
+      screen.getByLabelText(/find the gross salary needed for a net target/i),
+    );
+    await user.selectOptions(
+      screen.getByLabelText(/estimate method/i),
+      'flat-rate',
+    );
+    await user.clear(screen.getByLabelText(/estimated effective tax rate/i));
+    await user.type(
+      screen.getByLabelText(/estimated effective tax rate/i),
+      '25',
+    );
+    expect(screen.getByTestId('reverse-gross-hourly')).toHaveTextContent(
+      /€\s?26[,.]67/,
+    );
+  });
+
   it('links to the official calculator when Finnish examples do not cover the income', async () => {
     const user = userEvent.setup();
     render(App);
