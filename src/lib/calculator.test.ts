@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   WEEKS_PER_MONTH,
   calculateHourlyWage,
+  estimateFinnishNetPay2026,
   estimateNetPay,
+  FINNISH_EMPLOYEE_CONTRIBUTION_RATE,
+  FINNISH_TAX_EXAMPLE_MAX_INCOME,
   formatEuro,
   formatNumber,
   parsePositiveNumber,
@@ -116,6 +119,38 @@ describe('estimateNetPay', () => {
     expect(estimateNetPay(0, 40, 'weekly', 25)).toBeNull();
     expect(estimateNetPay(2000, 0, 'weekly', 25)).toBeNull();
     expect(estimateNetPay(2000, 40, 'weekly', 101)).toBeNull();
+  });
+});
+
+describe('estimateFinnishNetPay2026', () => {
+  it('annualizes monthly salary and interpolates official Finnish 2026 examples', () => {
+    const estimate = estimateFinnishNetPay2026(2000, 37.5, 'weekly');
+    expect(estimate).not.toBeNull();
+    if (!estimate) throw new Error('Expected a Finnish tax estimate.');
+    expect(estimate.annualGross).toBe(24000);
+    expect(estimate.annualTax).toBeCloseTo(1179.296, 6);
+    expect(estimate.annualEmployeeContributions).toBeCloseTo(
+      24000 * FINNISH_EMPLOYEE_CONTRIBUTION_RATE,
+      6,
+    );
+    expect(estimate.monthlyNet).toBeCloseTo(1737.9253, 4);
+    expect(estimate.hourlyNet).toBeCloseTo(10.6949, 4);
+    expect(estimate.yearlyNet).toBeCloseTo(20855.104, 6);
+  });
+
+  it('returns no estimate above the published Vero example range', () => {
+    expect(
+      estimateFinnishNetPay2026(
+        (FINNISH_TAX_EXAMPLE_MAX_INCOME + 1) / 12,
+        40,
+        'weekly',
+      ),
+    ).toBeNull();
+  });
+
+  it('rejects invalid salary and working hours', () => {
+    expect(estimateFinnishNetPay2026(0, 40, 'weekly')).toBeNull();
+    expect(estimateFinnishNetPay2026(2000, 0, 'weekly')).toBeNull();
   });
 });
 

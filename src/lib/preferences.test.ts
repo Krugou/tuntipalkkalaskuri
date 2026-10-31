@@ -16,6 +16,7 @@ describe('calculator preferences', () => {
       yearly: '38400',
       taxRate: '27',
       showNetEstimate: true,
+      estimateMode: 'flat-rate' as const,
       language: 'fi' as const,
     };
 

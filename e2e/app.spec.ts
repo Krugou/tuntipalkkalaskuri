@@ -59,6 +59,11 @@ test('estimates net pay only when enabled and explains the assumption', async ({
   page,
 }) => {
   await page.getByLabel('Show an estimated net pay').check();
+  await expect(page.getByLabel('Estimate method')).toHaveValue('finnish-2026');
+  await expect(page.getByText('€1,737.93')).toBeVisible();
+  await expect(page.getByText('€1,179.30')).toBeVisible();
+  await expect(page.getByText(/not a tax-card calculation/i)).toBeVisible();
+  await page.getByLabel('Estimate method').selectOption('flat-rate');
   await expect(page.getByText('€1,500.00')).toBeVisible();
   await expect(page.getByText(/not a Finnish tax calculation/i)).toBeVisible();
   await page.getByLabel('Estimated effective tax rate (%)').fill('101');

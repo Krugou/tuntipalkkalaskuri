@@ -2,13 +2,16 @@
   import { onMount } from 'svelte';
   import {
     calculateHourlyWage,
+    estimateFinnishNetPay2026,
     estimateNetPay,
+    FINNISH_TAX_EXAMPLE_MAX_INCOME,
     formatEuro,
     formatNumber,
     parsePositiveNumber,
     parseTaxRate,
     type HoursPeriod,
     type Language,
+    type NetEstimateMode,
   } from './lib/calculator';
   import { loadPreferences, savePreferences } from './lib/preferences';
 
@@ -21,6 +24,7 @@
   let yearly = $state(initial.yearly);
   let taxRate = $state(initial.taxRate);
   let showNetEstimate = $state(initial.showNetEstimate);
+  let estimateMode = $state<NetEstimateMode>(initial.estimateMode);
   let language = $state<Language>(initial.language);
   let dark = $state(document.documentElement.classList.contains('dark'));
   let storageWarning = $state(!loaded.storageAvailable);
@@ -53,14 +57,26 @@
       hourly: 'Hourly',
       estimateTitle: 'Net pay estimate',
       estimateDescription:
-        'Optional estimate using a flat effective tax rate you choose.',
+        'Use 2026 Finnish tax examples based on your monthly salary, or enter a custom flat rate.',
       enableEstimate: 'Show an estimated net pay',
+      estimateMode: 'Estimate method',
+      finnishEstimateMode: 'Finnish estimate (2026)',
+      flatRateMode: 'Custom flat tax rate',
+      finnishEstimateAssumptions:
+        'Income tax is interpolated from the Finnish Tax Administration’s 2026 example amounts for Helsinki (age 17–64, Evangelical-Lutheran church member, only wage income, no underage children, standard automatic deductions). Employee pension and unemployment contributions are estimated at 8.19%. This is not a tax-card calculation.',
+      finnishEstimateLimit:
+        'The published examples cover annual salaries up to €70,000. Use the official calculator for higher income or a personal estimate.',
+      veroExamples: 'Vero.fi 2026 tax examples',
+      veroCalculator: 'official tax calculator',
+      estimatedTaxYear: 'Estimated income tax per year',
+      estimatedContributionsYear:
+        'Estimated pension and unemployment contributions per year',
       taxRate: 'Estimated effective tax rate (%)',
       estimatedNetMonth: 'Estimated net per month',
       estimatedNetHour: 'Estimated net per hour',
       estimatedNetYear: 'Estimated net per year',
       estimateCaveat:
-        'This is only a simple flat-rate estimate, not a Finnish tax calculation or tax advice. Actual take-home pay depends on personal and local tax details.',
+        'This custom flat-rate estimate is not a Finnish tax calculation or tax advice.',
       methodology:
         'Weekly hours are converted to monthly hours using 52 weeks / 12 months (about 4.33 weeks per month). All salary figures are gross before taxes.',
       required: '{field} is required.',
@@ -101,14 +117,26 @@
       hourly: 'Tunnissa',
       estimateTitle: 'Arvio nettopalkasta',
       estimateDescription:
-        'Valinnainen arvio itse valitsemallasi tasaveroprosentilla.',
+        'Käytä vuoden 2026 Suomen veroarviota kuukausipalkan perusteella tai syötä oma tasaveroprosentti.',
       enableEstimate: 'Näytä arvio nettopalkasta',
+      estimateMode: 'Arviotapa',
+      finnishEstimateMode: 'Suomen veroarvio (2026)',
+      flatRateMode: 'Oma tasaveroprosentti',
+      finnishEstimateAssumptions:
+        'Tulovero interpoloidaan Verohallinnon vuoden 2026 Helsinki-esimerkeistä (17–64-vuotias, evankelis-luterilaisen kirkon jäsen, vain palkkatuloja, ei alaikäisiä huollettavia, automaattiset vähennykset). Työntekijän eläke- ja työttömyysvakuutusmaksuksi arvioidaan 8,19 %. Tämä ei ole verokorttilaskelma.',
+      finnishEstimateLimit:
+        'Julkaistut esimerkit kattavat enintään 70 000 € vuositulot. Käytä virallista laskuria tätä suuremmilla tuloilla tai henkilökohtaiseen arvioon.',
+      veroExamples: 'Vero.fi: vuoden 2026 veroesimerkit',
+      veroCalculator: 'virallinen verolaskuri',
+      estimatedTaxYear: 'Arvio tuloverosta vuodessa',
+      estimatedContributionsYear:
+        'Arvio eläke- ja työttömyysvakuutusmaksuista vuodessa',
       taxRate: 'Arvioitu efektiivinen veroprosentti (%)',
       estimatedNetMonth: 'Arvio netosta kuukaudessa',
       estimatedNetHour: 'Arvio netosta tunnissa',
       estimatedNetYear: 'Arvio netosta vuodessa',
       estimateCaveat:
-        'Tämä on yksinkertainen tasaveroprosenttiin perustuva arvio, ei Suomen verolaskelma tai veroneuvontaa. Todellinen nettopalkka riippuu henkilökohtaisista ja paikallisista verotiedoista.',
+        'Tämä itse valittuun tasaveroprosenttiin perustuva arvio ei ole Suomen verolaskelma eikä veroneuvontaa.',
       methodology:
         'Viikkotunnit muunnetaan kuukausitunneiksi käyttämällä 52 viikkoa / 12 kuukautta (noin 4,33 viikkoa kuukaudessa). Palkkaluvut ovat bruttopalkkoja ennen veroja.',
       required: '{field} vaaditaan.',
@@ -147,19 +175,39 @@
       : null,
   );
   const netEstimate = $derived(
+    showNetEstimate && estimateMode === 'finnish-2026'
+      ? salaryValue !== null && hoursValue !== null
+        ? estimateFinnishNetPay2026(salaryValue, hoursValue, period)
+        : null
+      : showNetEstimate &&
+          salaryValue !== null &&
+          hoursValue !== null &&
+          taxRateValue !== null
+        ? estimateNetPay(salaryValue, hoursValue, period, taxRateValue)
+        : null,
+  );
+  const finnishEstimate = $derived(
     showNetEstimate &&
+      estimateMode === 'finnish-2026' &&
       salaryValue !== null &&
-      hoursValue !== null &&
-      taxRateValue !== null
-      ? estimateNetPay(salaryValue, hoursValue, period, taxRateValue)
+      hoursValue !== null
+      ? estimateFinnishNetPay2026(salaryValue, hoursValue, period)
       : null,
+  );
+  const finnishEstimateOverLimit = $derived(
+    showNetEstimate &&
+      estimateMode === 'finnish-2026' &&
+      salaryValue !== null &&
+      salaryValue * 12 > FINNISH_TAX_EXAMPLE_MAX_INCOME,
   );
 
   const salaryError = $derived(getPositiveInputError(salary, copy.salaryField));
   const hoursError = $derived(getPositiveInputError(hours, copy.hoursField));
   const yearlyError = $derived(getPositiveInputError(yearly, copy.yearlyField));
   const taxRateError = $derived(
-    showNetEstimate && taxRateValue === null ? copy.invalidTax : '',
+    showNetEstimate && estimateMode === 'flat-rate' && taxRateValue === null
+      ? copy.invalidTax
+      : '',
   );
 
   const inputClass =
@@ -229,6 +277,7 @@
         yearly,
         taxRate,
         showNetEstimate,
+        estimateMode,
         language,
       })
     ) {
@@ -475,34 +524,104 @@
 
           {#if showNetEstimate}
             <div class="mt-4">
-              <label for="tax-rate" class={labelClass}>{copy.taxRate}</label>
-              <div class="relative">
-                <input
-                  id="tax-rate"
-                  type="text"
-                  inputmode="decimal"
-                  bind:value={taxRate}
-                  aria-invalid={Boolean(taxRateError)}
-                  aria-describedby={taxRateError
-                    ? 'tax-rate-error'
-                    : 'tax-rate-help'}
-                  class="{inputClass} !pr-8"
-                />
-                <span
-                  class="absolute inset-y-0 right-3 flex items-center text-slate-500 dark:text-slate-400"
-                  aria-hidden="true">%</span
-                >
-              </div>
-              <p
-                id="tax-rate-help"
-                class="mt-1 text-xs text-slate-500 dark:text-slate-400"
+              <label for="estimate-mode" class={labelClass}>
+                {copy.estimateMode}
+              </label>
+              <select
+                id="estimate-mode"
+                bind:value={estimateMode}
+                class={inputClass}
               >
-                {copy.estimateCaveat}
-              </p>
-              {#if taxRateError}
-                <p id="tax-rate-error" class={errorClass} role="alert">
-                  {taxRateError}
+                <option value="finnish-2026">{copy.finnishEstimateMode}</option>
+                <option value="flat-rate">{copy.flatRateMode}</option>
+              </select>
+
+              {#if estimateMode === 'finnish-2026'}
+                <p
+                  id="finnish-tax-help"
+                  class="mt-2 text-xs text-slate-500 dark:text-slate-400"
+                >
+                  {copy.finnishEstimateAssumptions}
+                  <a
+                    class="font-medium text-indigo-700 underline dark:text-indigo-300"
+                    href="https://www.vero.fi/en/individuals/tax-cards-and-tax-returns/income/earned-income/tax-rates-on-pay-pensions-and-benefits/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {copy.veroExamples}
+                  </a>
+                  {' · '}
+                  <a
+                    class="font-medium text-indigo-700 underline dark:text-indigo-300"
+                    href="https://www.vero.fi/en/individuals/tax-cards-and-tax-returns/tax_card/tax-percentage-calculator/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {copy.veroCalculator}
+                  </a>
                 </p>
+                {#if finnishEstimateOverLimit}
+                  <p class={errorClass} role="alert">
+                    {copy.finnishEstimateLimit}
+                  </p>
+                {/if}
+              {:else}
+                <div class="mt-4">
+                  <label for="tax-rate" class={labelClass}>{copy.taxRate}</label
+                  >
+                  <div class="relative">
+                    <input
+                      id="tax-rate"
+                      type="text"
+                      inputmode="decimal"
+                      bind:value={taxRate}
+                      aria-invalid={Boolean(taxRateError)}
+                      aria-describedby={taxRateError
+                        ? 'tax-rate-error'
+                        : 'tax-rate-help'}
+                      class="{inputClass} !pr-8"
+                    />
+                    <span
+                      class="absolute inset-y-0 right-3 flex items-center text-slate-500 dark:text-slate-400"
+                      aria-hidden="true">%</span
+                    >
+                  </div>
+                  <p
+                    id="tax-rate-help"
+                    class="mt-1 text-xs text-slate-500 dark:text-slate-400"
+                  >
+                    {copy.estimateCaveat}
+                  </p>
+                  {#if taxRateError}
+                    <p id="tax-rate-error" class={errorClass} role="alert">
+                      {taxRateError}
+                    </p>
+                  {/if}
+                </div>
+              {/if}
+
+              {#if finnishEstimate}
+                <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
+                    <dt class="text-slate-500 dark:text-slate-400">
+                      {copy.estimatedTaxYear}
+                    </dt>
+                    <dd class="font-semibold text-slate-900 dark:text-white">
+                      {formatEuro(finnishEstimate.annualTax, language)}
+                    </dd>
+                  </div>
+                  <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-800">
+                    <dt class="text-slate-500 dark:text-slate-400">
+                      {copy.estimatedContributionsYear}
+                    </dt>
+                    <dd class="font-semibold text-slate-900 dark:text-white">
+                      {formatEuro(
+                        finnishEstimate.annualEmployeeContributions,
+                        language,
+                      )}
+                    </dd>
+                  </div>
+                </dl>
               {/if}
 
               {#if netEstimate}

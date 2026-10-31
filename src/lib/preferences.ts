@@ -1,4 +1,4 @@
-import type { HoursPeriod, Language } from './calculator';
+import type { HoursPeriod, Language, NetEstimateMode } from './calculator';
 
 export const PREFERENCES_KEY = 'calculator-preferences';
 
@@ -9,6 +9,7 @@ export interface CalculatorPreferences {
   yearly: string;
   taxRate: string;
   showNetEstimate: boolean;
+  estimateMode: NetEstimateMode;
   language: Language;
 }
 
@@ -24,6 +25,7 @@ const defaultPreferences: CalculatorPreferences = {
   yearly: '24000',
   taxRate: '25',
   showNetEstimate: false,
+  estimateMode: 'finnish-2026',
   language: 'en',
 };
 
@@ -87,6 +89,10 @@ export function loadPreferences(): LoadedPreferences {
         typeof parsed.showNetEstimate === 'boolean'
           ? parsed.showNetEstimate
           : defaultPreferences.showNetEstimate,
+      estimateMode:
+        parsed.estimateMode === 'flat-rate'
+          ? 'flat-rate'
+          : defaultPreferences.estimateMode,
       language: parsed.language === 'fi' ? 'fi' : 'en',
     },
     storageAvailable: true,

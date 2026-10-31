@@ -5,9 +5,16 @@ or yearly gross salary into hourly, weekly, and annual figures. It supports
 English and Finnish, stores preferences in the browser, and can be installed
 and used offline.
 
-The optional net-pay view applies a user-selected flat effective tax rate. It
-is an estimate only, not a Finnish tax calculation or tax advice. Calculator
-inputs remain in local browser storage; the app has no backend or API.
+The optional net-pay view includes a Finnish 2026 estimate based on annualized
+monthly gross salary and the Finnish Tax Administration's published Helsinki
+examples, plus an alternative custom flat-rate estimate. The Finnish estimate
+interpolates between published examples and assumes their stated profile; it is
+not an exact tax-card calculation or tax advice. See
+[Vero's 2026 tax examples](https://www.vero.fi/en/individuals/tax-cards-and-tax-returns/income/earned-income/tax-rates-on-pay-pensions-and-benefits/)
+and use
+[Vero's calculator](https://www.vero.fi/en/individuals/tax-cards-and-tax-returns/tax_card/tax-percentage-calculator/)
+for a personal estimate. Calculator inputs remain in local browser storage;
+the app has no backend or API.
 
 ## Development
 

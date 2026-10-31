@@ -102,12 +102,53 @@ describe('App', () => {
     );
     expect(stored.salary).toBe('3500');
     expect(stored.period).toBe('weekly');
+    expect(stored.estimateMode).toBe('finnish-2026');
+  });
+
+  it('estimates Finnish 2026 net pay from annualized monthly salary', async () => {
+    const user = userEvent.setup();
+    render(App);
+    await user.click(screen.getByLabelText(/show an estimated net pay/i));
+    expect(screen.getByLabelText(/estimate method/i)).toHaveValue(
+      'finnish-2026',
+    );
+    expect(screen.getByText('€1,179.30')).toBeInTheDocument();
+    expect(screen.getByText('€1,965.60')).toBeInTheDocument();
+    expect(screen.getByText('€1,737.93')).toBeInTheDocument();
+    expect(
+      screen.getByText(/interpolated from the Finnish Tax Administration/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /vero.fi 2026 tax examples/i }),
+    ).toHaveAttribute('href', expect.stringContaining('vero.fi'));
+  });
+
+  it('links to the official calculator when Finnish examples do not cover the income', async () => {
+    const user = userEvent.setup();
+    render(App);
+    await user.clear(screen.getByLabelText(/monthly salary/i));
+    await user.type(screen.getByLabelText(/monthly salary/i), '6000');
+    await user.click(screen.getByLabelText(/show an estimated net pay/i));
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /annual salaries up to €70,000/i,
+    );
+    expect(
+      screen.getByRole('link', { name: /official tax calculator/i }),
+    ).toHaveAttribute(
+      'href',
+      expect.stringContaining('tax-percentage-calculator'),
+    );
+    expect(screen.queryByText('€1,737.93')).not.toBeInTheDocument();
   });
 
   it('estimates net pay with a user-selected flat tax rate', async () => {
     const user = userEvent.setup();
     render(App);
     await user.click(screen.getByLabelText(/show an estimated net pay/i));
+    await user.selectOptions(
+      screen.getByLabelText(/estimate method/i),
+      'flat-rate',
+    );
     expect(screen.getByLabelText(/effective tax rate/i)).toHaveValue('25');
     expect(screen.getByText('€1,500.00')).toBeInTheDocument();
     expect(screen.getByText('€9.23')).toBeInTheDocument();
@@ -120,6 +161,10 @@ describe('App', () => {
     const user = userEvent.setup();
     render(App);
     await user.click(screen.getByLabelText(/show an estimated net pay/i));
+    await user.selectOptions(
+      screen.getByLabelText(/estimate method/i),
+      'flat-rate',
+    );
     const taxRate = screen.getByLabelText(/effective tax rate/i);
     await user.clear(taxRate);
     await user.type(taxRate, '101');
