@@ -1,7 +1,7 @@
 <script>
   import { calculateHourlyWage, formatEuro } from './lib/calculator.js';
 
-  let salary = $state('');
+  let salary = $state('2000');
   let hours = $state('40');
   let period = $state('weekly');
 
