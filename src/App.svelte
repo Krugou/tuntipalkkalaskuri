@@ -8,6 +8,11 @@
   const salaryValue = $derived(parseFloat(salary.replace(',', '.')));
   const hoursValue = $derived(parseFloat(hours.replace(',', '.')));
   const result = $derived(calculateHourlyWage(salaryValue, hoursValue, period));
+
+  let yearly = $state('24000');
+  const yearlyValue = $derived(parseFloat(yearly.replace(',', '.')));
+  const yearlyMonthly = $derived(yearlyValue / 12);
+  const yearlyResult = $derived(calculateHourlyWage(yearlyMonthly, hoursValue, period));
 </script>
 
 <main class="min-h-screen bg-slate-100 text-slate-800 flex items-center justify-center p-4 sm:p-8">
@@ -89,6 +94,39 @@
         <p class="text-sm text-slate-500">
           Enter a monthly salary and your working hours to see your hourly wage.
         </p>
+      {/if}
+    </section>
+
+    <section class="mt-6 rounded-xl ring-1 ring-slate-200 p-5">
+      <h2 class="text-lg font-semibold text-slate-900">From yearly salary</h2>
+      <p class="text-sm text-slate-500 mt-1">Enter a yearly gross salary to see its monthly and hourly equivalent.</p>
+
+      <div class="mt-4">
+        <label for="yearly" class="block text-sm font-medium text-slate-700 mb-1">Yearly salary (gross)</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-3 flex items-center text-slate-500">€</span>
+          <input
+            id="yearly"
+            type="text"
+            inputmode="decimal"
+            placeholder="24000"
+            bind:value={yearly}
+            class="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-8 pr-3 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          />
+        </div>
+      </div>
+
+      {#if yearlyResult}
+        <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+          <div class="rounded-lg bg-slate-50 p-3">
+            <dt class="text-slate-500">Per month</dt>
+            <dd class="font-semibold text-slate-900">{formatEuro(yearlyMonthly)}</dd>
+          </div>
+          <div class="rounded-lg bg-slate-50 p-3">
+            <dt class="text-slate-500">Hourly</dt>
+            <dd class="font-semibold text-slate-900">{formatEuro(yearlyResult.hourly)}</dd>
+          </div>
+        </dl>
       {/if}
     </section>
 
