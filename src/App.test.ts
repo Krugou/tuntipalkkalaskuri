@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { render, screen, within } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import App from './App.svelte';
 
@@ -103,6 +103,34 @@ describe('App', () => {
     expect(stored.salary).toBe('3500');
     expect(stored.period).toBe('weekly');
     expect(stored.estimateMode).toBe('finnish-2026');
+  });
+
+  it('lets each results section close independently and persists the state', async () => {
+    const user = userEvent.setup();
+    render(App);
+    const hourlySection = screen.getByTestId('hourly-section');
+    const netSection = screen.getByTestId('net-section');
+    const yearlySection = screen.getByTestId('yearly-section');
+
+    expect(hourlySection).toHaveProperty('open', true);
+    expect(netSection).toHaveProperty('open', true);
+    expect(yearlySection).toHaveProperty('open', true);
+
+    await user.click(
+      within(hourlySection).getAllByText(/your hourly wage/i)[0],
+    );
+    await user.click(within(yearlySection).getByText('From yearly salary'));
+
+    expect(hourlySection).toHaveProperty('open', false);
+    expect(netSection).toHaveProperty('open', true);
+    expect(yearlySection).toHaveProperty('open', false);
+
+    const stored = JSON.parse(
+      localStorage.getItem('calculator-preferences') ?? '{}',
+    );
+    expect(stored.hourlySectionOpen).toBe(false);
+    expect(stored.netSectionOpen).toBe(true);
+    expect(stored.yearlySectionOpen).toBe(false);
   });
 
   it('estimates Finnish 2026 net pay from annualized monthly salary', async () => {

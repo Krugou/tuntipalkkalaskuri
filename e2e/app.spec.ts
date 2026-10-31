@@ -18,7 +18,7 @@ test('recalculates when salary changes', async ({ page }) => {
 });
 
 test('supports monthly hours', async ({ page }) => {
-  await page.getByRole('group').getByText('Per month').click();
+  await page.locator('fieldset').getByText('Per month').click();
   await page.getByLabel('Hours per month').fill('160');
   await expect(page.getByTestId('hourly')).toHaveText('€12.50');
 });
@@ -83,6 +83,34 @@ test('calculates gross salary for desired hourly and monthly net amounts', async
   await page.getByLabel('Target period').selectOption('monthly');
   await expect(page.getByTestId('reverse-gross-monthly')).toContainText('€5,');
   await expect(page.getByTestId('reverse-gross-yearly')).toContainText('€60,');
+});
+
+test('remembers each accordion open state after reloading', async ({
+  page,
+}) => {
+  const hourlySection = page.getByTestId('hourly-section');
+  const netSection = page.getByTestId('net-section');
+  const yearlySection = page.getByTestId('yearly-section');
+
+  await expect(hourlySection).toHaveJSProperty('open', true);
+  await expect(netSection).toHaveJSProperty('open', true);
+  await expect(yearlySection).toHaveJSProperty('open', true);
+
+  await hourlySection.locator('summary').click();
+  await yearlySection.locator('summary').click();
+  await expect(hourlySection).toHaveJSProperty('open', false);
+  await expect(yearlySection).toHaveJSProperty('open', false);
+
+  await page.reload();
+  await expect(page.getByTestId('hourly-section')).toHaveJSProperty(
+    'open',
+    false,
+  );
+  await expect(page.getByTestId('net-section')).toHaveJSProperty('open', true);
+  await expect(page.getByTestId('yearly-section')).toHaveJSProperty(
+    'open',
+    false,
+  );
 });
 
 test('shares or copies a concise result', async ({ page }) => {

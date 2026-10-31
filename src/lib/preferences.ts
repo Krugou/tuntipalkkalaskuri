@@ -18,6 +18,9 @@ export interface CalculatorPreferences {
   showReverseMode: boolean;
   netTarget: string;
   netTargetPeriod: NetTargetPeriod;
+  hourlySectionOpen: boolean;
+  netSectionOpen: boolean;
+  yearlySectionOpen: boolean;
   language: Language;
 }
 
@@ -37,6 +40,9 @@ const defaultPreferences: CalculatorPreferences = {
   showReverseMode: false,
   netTarget: '20',
   netTargetPeriod: 'hourly',
+  hourlySectionOpen: true,
+  netSectionOpen: true,
+  yearlySectionOpen: true,
   language: 'en',
 };
 
@@ -117,6 +123,18 @@ export function loadPreferences(): LoadedPreferences {
         parsed.netTargetPeriod === 'monthly'
           ? parsed.netTargetPeriod
           : defaultPreferences.netTargetPeriod,
+      hourlySectionOpen:
+        typeof parsed.hourlySectionOpen === 'boolean'
+          ? parsed.hourlySectionOpen
+          : defaultPreferences.hourlySectionOpen,
+      netSectionOpen:
+        typeof parsed.netSectionOpen === 'boolean'
+          ? parsed.netSectionOpen
+          : defaultPreferences.netSectionOpen,
+      yearlySectionOpen:
+        typeof parsed.yearlySectionOpen === 'boolean'
+          ? parsed.yearlySectionOpen
+          : defaultPreferences.yearlySectionOpen,
       language: parsed.language === 'fi' ? 'fi' : 'en',
     },
     storageAvailable: true,

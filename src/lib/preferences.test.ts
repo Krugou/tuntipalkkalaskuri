@@ -20,6 +20,9 @@ describe('calculator preferences', () => {
       showReverseMode: true,
       netTarget: '20',
       netTargetPeriod: 'hourly' as const,
+      hourlySectionOpen: false,
+      netSectionOpen: true,
+      yearlySectionOpen: false,
       language: 'fi' as const,
     };
 
@@ -43,6 +46,9 @@ describe('calculator preferences', () => {
     expect(loaded.preferences.period).toBe('weekly');
     expect(loaded.preferences.estimateMode).toBe('finnish-2026');
     expect(loaded.preferences.netTargetPeriod).toBe('hourly');
+    expect(loaded.preferences.hourlySectionOpen).toBe(true);
+    expect(loaded.preferences.netSectionOpen).toBe(true);
+    expect(loaded.preferences.yearlySectionOpen).toBe(true);
   });
 
   it('falls back safely when stored JSON is malformed', () => {

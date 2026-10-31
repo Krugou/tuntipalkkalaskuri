@@ -30,6 +30,9 @@
   let showReverseMode = $state(initial.showReverseMode);
   let netTarget = $state(initial.netTarget);
   let netTargetPeriod = $state<NetTargetPeriod>(initial.netTargetPeriod);
+  let hourlySectionOpen = $state(initial.hourlySectionOpen);
+  let netSectionOpen = $state(initial.netSectionOpen);
+  let yearlySectionOpen = $state(initial.yearlySectionOpen);
   let language = $state<Language>(initial.language);
   let dark = $state(document.documentElement.classList.contains('dark'));
   let storageWarning = $state(!loaded.storageAvailable);
@@ -341,6 +344,9 @@
         showReverseMode,
         netTarget,
         netTargetPeriod,
+        hourlySectionOpen,
+        netSectionOpen,
+        yearlySectionOpen,
         language,
       })
     ) {
@@ -498,84 +504,96 @@
           </div>
         </form>
 
-        <section
+        <details
+          bind:open={hourlySectionOpen}
+          data-testid="hourly-section"
           class="mt-8 rounded-xl bg-indigo-50 p-5 dark:bg-indigo-950/50"
-          aria-live="polite"
-          aria-label={copy.hourlyWage}
         >
-          {#if result}
-            <p class="text-sm text-indigo-700 dark:text-indigo-300">
-              {copy.hourlyWage}
-            </p>
-            <p
-              class="mt-1 text-4xl font-bold text-indigo-900 dark:text-indigo-100"
-              data-testid="hourly"
-            >
-              {formatEuro(result.hourly, language)}
-            </p>
-
-            <dl class="mt-5 grid grid-cols-2 gap-3 text-sm">
-              <div class="rounded-lg bg-white p-3 dark:bg-slate-800">
-                <dt class="text-slate-500 dark:text-slate-400">
-                  {copy.monthlyHours}
-                </dt>
-                <dd class="font-semibold text-slate-900 dark:text-white">
-                  {formatNumber(result.monthlyHours, language)}
-                </dd>
-              </div>
-              <div class="rounded-lg bg-white p-3 dark:bg-slate-800">
-                <dt class="text-slate-500 dark:text-slate-400">
-                  {copy.payPerWeek}
-                </dt>
-                <dd class="font-semibold text-slate-900 dark:text-white">
-                  {formatEuro(result.weeklyPay, language)}
-                </dd>
-              </div>
-              <div class="col-span-2 rounded-lg bg-white p-3 dark:bg-slate-800">
-                <dt class="text-slate-500 dark:text-slate-400">
-                  {copy.payPerYear}
-                </dt>
-                <dd class="font-semibold text-slate-900 dark:text-white">
-                  {formatEuro(result.yearlyPay, language)}
-                </dd>
-              </div>
-            </dl>
-
-            <button
-              type="button"
-              onclick={shareResult}
-              class="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-indigo-950"
-            >
-              {copy.share}
-            </button>
-            {#if shareMessage}
+          <summary
+            class="cursor-pointer select-none font-semibold text-indigo-900 dark:text-indigo-100"
+          >
+            {copy.hourlyWage}
+          </summary>
+          <div class="mt-4" aria-live="polite" aria-label={copy.hourlyWage}>
+            {#if result}
+              <p class="text-sm text-indigo-700 dark:text-indigo-300">
+                {copy.hourlyWage}
+              </p>
               <p
-                class="mt-2 text-sm text-indigo-700 dark:text-indigo-300"
-                role="status"
+                class="mt-1 text-4xl font-bold text-indigo-900 dark:text-indigo-100"
+                data-testid="hourly"
               >
-                {shareMessage}
+                {formatEuro(result.hourly, language)}
+              </p>
+
+              <dl class="mt-5 grid grid-cols-2 gap-3 text-sm">
+                <div class="rounded-lg bg-white p-3 dark:bg-slate-800">
+                  <dt class="text-slate-500 dark:text-slate-400">
+                    {copy.monthlyHours}
+                  </dt>
+                  <dd class="font-semibold text-slate-900 dark:text-white">
+                    {formatNumber(result.monthlyHours, language)}
+                  </dd>
+                </div>
+                <div class="rounded-lg bg-white p-3 dark:bg-slate-800">
+                  <dt class="text-slate-500 dark:text-slate-400">
+                    {copy.payPerWeek}
+                  </dt>
+                  <dd class="font-semibold text-slate-900 dark:text-white">
+                    {formatEuro(result.weeklyPay, language)}
+                  </dd>
+                </div>
+                <div
+                  class="col-span-2 rounded-lg bg-white p-3 dark:bg-slate-800"
+                >
+                  <dt class="text-slate-500 dark:text-slate-400">
+                    {copy.payPerYear}
+                  </dt>
+                  <dd class="font-semibold text-slate-900 dark:text-white">
+                    {formatEuro(result.yearlyPay, language)}
+                  </dd>
+                </div>
+              </dl>
+
+              <button
+                type="button"
+                onclick={shareResult}
+                class="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-indigo-950"
+              >
+                {copy.share}
+              </button>
+              {#if shareMessage}
+                <p
+                  class="mt-2 text-sm text-indigo-700 dark:text-indigo-300"
+                  role="status"
+                >
+                  {shareMessage}
+                </p>
+              {/if}
+            {:else}
+              <p class="text-sm text-slate-500 dark:text-slate-400">
+                {copy.monthlyHint}
               </p>
             {/if}
-          {:else}
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-              {copy.monthlyHint}
-            </p>
-          {/if}
-        </section>
+          </div>
+        </details>
 
-        <section
+        <details
+          bind:open={netSectionOpen}
+          data-testid="net-section"
           class="mt-6 rounded-xl border border-slate-200 p-5 dark:border-slate-700"
-          aria-labelledby="net-estimate-title"
         >
-          <h2
-            id="net-estimate-title"
-            class="text-lg font-semibold text-slate-900 dark:text-white"
-          >
-            {copy.estimateTitle}
-          </h2>
-          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {copy.estimateDescription}
-          </p>
+          <summary class="cursor-pointer select-none">
+            <h2
+              id="net-estimate-title"
+              class="inline text-lg font-semibold text-slate-900 dark:text-white"
+            >
+              {copy.estimateTitle}
+            </h2>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              {copy.estimateDescription}
+            </p>
+          </summary>
           <label class="mt-4 flex cursor-pointer items-start gap-3 text-sm">
             <input
               type="checkbox"
@@ -826,23 +844,26 @@
               {/if}
             </div>
           {/if}
-        </section>
+        </details>
       </div>
 
       <div>
-        <section
+        <details
+          bind:open={yearlySectionOpen}
+          data-testid="yearly-section"
           class="rounded-xl p-5 ring-1 ring-slate-200 dark:ring-slate-700"
-          aria-labelledby="yearly-title"
         >
-          <h2
-            id="yearly-title"
-            class="text-lg font-semibold text-slate-900 dark:text-white"
-          >
-            {copy.yearlyTitle}
-          </h2>
-          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {copy.yearlyDescription}
-          </p>
+          <summary class="cursor-pointer select-none">
+            <h2
+              id="yearly-title"
+              class="inline text-lg font-semibold text-slate-900 dark:text-white"
+            >
+              {copy.yearlyTitle}
+            </h2>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              {copy.yearlyDescription}
+            </p>
+          </summary>
 
           <div class="mt-4">
             <label for="yearly" class={labelClass}>{copy.yearlySalary}</label>
@@ -895,7 +916,7 @@
               </div>
             </dl>
           {/if}
-        </section>
+        </details>
 
         <p class="mt-6 text-xs text-slate-400 dark:text-slate-500">
           {copy.methodology}

@@ -21,6 +21,10 @@ take-home target per hour or month. It uses the same tax method and working
 hours as the net-pay estimate; the Finnish estimate is available only within
 the published example range.
 
+The hourly results, net-pay tools, and yearly salary panels can each be
+collapsed independently. Their open/closed state is saved with the other
+calculator preferences in the browser.
+
 ## Development
 
 ```bash
