@@ -33,6 +33,7 @@
   let hourlySectionOpen = $state(initial.hourlySectionOpen);
   let netSectionOpen = $state(initial.netSectionOpen);
   let yearlySectionOpen = $state(initial.yearlySectionOpen);
+  let wideLayout = $state(initial.wideLayout);
   let language = $state<Language>(initial.language);
   let dark = $state(document.documentElement.classList.contains('dark'));
   let storageWarning = $state(!loaded.storageAvailable);
@@ -45,6 +46,8 @@
       dark: '🌙 Dark',
       light: '☀️ Light',
       switchLanguage: 'Suomi',
+      wideLayout: 'Wide layout',
+      standardLayout: 'Standard layout',
       monthlySalary: 'Monthly salary (gross)',
       yearlySalary: 'Yearly salary (gross)',
       workingHoursAre: 'Working hours are',
@@ -122,6 +125,8 @@
       dark: '🌙 Tumma',
       light: '☀️ Vaalea',
       switchLanguage: 'English',
+      wideLayout: 'Leveä näkymä',
+      standardLayout: 'Normaali näkymä',
       monthlySalary: 'Kuukausipalkka (brutto)',
       yearlySalary: 'Vuosipalkka (brutto)',
       workingHoursAre: 'Työtunnit ovat',
@@ -347,6 +352,7 @@
         hourlySectionOpen,
         netSectionOpen,
         yearlySectionOpen,
+        wideLayout,
         language,
       })
     ) {
@@ -388,9 +394,13 @@
   class="flex min-h-screen items-center justify-center bg-slate-100 p-4 text-slate-800 dark:bg-slate-950 dark:text-slate-200 sm:p-8"
 >
   <div
-    class="w-full max-w-5xl rounded-2xl bg-white p-6 shadow-lg ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 sm:p-8 lg:p-10"
+    class="w-full rounded-2xl bg-white p-6 shadow-lg ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 sm:p-8 lg:p-10 {wideLayout
+      ? 'max-w-screen-2xl'
+      : 'max-w-5xl'}"
   >
-    <header class="mb-6 flex items-start justify-between gap-4">
+    <header
+      class="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row"
+    >
       <div>
         <h1
           class="text-2xl font-bold text-slate-900 dark:text-white lg:text-3xl"
@@ -401,7 +411,16 @@
           {copy.subtitle}
         </p>
       </div>
-      <div class="flex shrink-0 flex-wrap justify-end gap-2">
+      <div class="flex w-full shrink-0 flex-wrap justify-end gap-2 sm:w-auto">
+        <button
+          type="button"
+          onclick={() => (wideLayout = !wideLayout)}
+          aria-label={wideLayout ? copy.standardLayout : copy.wideLayout}
+          aria-pressed={wideLayout}
+          class="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+        >
+          {wideLayout ? copy.standardLayout : copy.wideLayout}
+        </button>
         <button
           type="button"
           onclick={toggleLanguage}

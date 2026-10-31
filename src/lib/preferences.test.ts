@@ -23,6 +23,7 @@ describe('calculator preferences', () => {
       hourlySectionOpen: false,
       netSectionOpen: true,
       yearlySectionOpen: false,
+      wideLayout: true,
       language: 'fi' as const,
     };
 
@@ -49,6 +50,7 @@ describe('calculator preferences', () => {
     expect(loaded.preferences.hourlySectionOpen).toBe(true);
     expect(loaded.preferences.netSectionOpen).toBe(true);
     expect(loaded.preferences.yearlySectionOpen).toBe(true);
+    expect(loaded.preferences.wideLayout).toBe(false);
   });
 
   it('falls back safely when stored JSON is malformed', () => {

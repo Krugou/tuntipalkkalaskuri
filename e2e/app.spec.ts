@@ -113,6 +113,34 @@ test('remembers each accordion open state after reloading', async ({
   );
 });
 
+test('wide layout expands the card and persists after reload', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1800, height: 1000 });
+  const card = page.locator('main > div');
+  const standardBox = await card.boundingBox();
+  if (!standardBox)
+    throw new Error('Expected the application card to be visible.');
+
+  await page.getByRole('button', { name: 'Wide layout' }).click();
+  await expect(
+    page.getByRole('button', { name: 'Standard layout' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  const wideBox = await card.boundingBox();
+  if (!wideBox)
+    throw new Error('Expected the wide application card to be visible.');
+  expect(wideBox.width).toBeGreaterThan(standardBox.width + 200);
+
+  await page.reload();
+  await expect(
+    page.getByRole('button', { name: 'Standard layout' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  const persistedBox = await card.boundingBox();
+  if (!persistedBox)
+    throw new Error('Expected the persisted wide card to be visible.');
+  expect(persistedBox.width).toBeGreaterThan(standardBox.width + 200);
+});
+
 test('shares or copies a concise result', async ({ page }) => {
   await page.getByRole('button', { name: /share \/ copy result/i }).click();
   await expect(page.getByRole('status')).toContainText(

@@ -21,6 +21,7 @@ export interface CalculatorPreferences {
   hourlySectionOpen: boolean;
   netSectionOpen: boolean;
   yearlySectionOpen: boolean;
+  wideLayout: boolean;
   language: Language;
 }
 
@@ -43,6 +44,7 @@ const defaultPreferences: CalculatorPreferences = {
   hourlySectionOpen: true,
   netSectionOpen: true,
   yearlySectionOpen: true,
+  wideLayout: false,
   language: 'en',
 };
 
@@ -135,6 +137,10 @@ export function loadPreferences(): LoadedPreferences {
         typeof parsed.yearlySectionOpen === 'boolean'
           ? parsed.yearlySectionOpen
           : defaultPreferences.yearlySectionOpen,
+      wideLayout:
+        typeof parsed.wideLayout === 'boolean'
+          ? parsed.wideLayout
+          : defaultPreferences.wideLayout,
       language: parsed.language === 'fi' ? 'fi' : 'en',
     },
     storageAvailable: true,

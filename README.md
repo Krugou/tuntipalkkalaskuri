@@ -25,6 +25,10 @@ The hourly results, net-pay tools, and yearly salary panels can each be
 collapsed independently. Their open/closed state is saved with the other
 calculator preferences in the browser.
 
+Use the header's **Wide layout** toggle to expand the calculator on large
+screens. The selected layout is remembered in the browser; small screens remain
+responsive.
+
 ## Development
 
 ```bash

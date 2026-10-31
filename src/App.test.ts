@@ -24,6 +24,28 @@ describe('App', () => {
     expect(screen.getByTestId('hourly')).toHaveTextContent('€12.31');
   });
 
+  it('toggles and persists wide layout', async () => {
+    const user = userEvent.setup();
+    render(App);
+    const toggle = screen.getByRole('button', { name: 'Wide layout' });
+    const card = screen.getByRole('heading', {
+      name: 'Hourly Wage Calculator',
+    }).parentElement?.parentElement?.parentElement;
+
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    expect(card).toHaveClass('max-w-5xl');
+    await user.click(toggle);
+
+    expect(
+      screen.getByRole('button', { name: 'Standard layout' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(card).toHaveClass('max-w-screen-2xl');
+    expect(
+      JSON.parse(localStorage.getItem('calculator-preferences') ?? '{}')
+        .wideLayout,
+    ).toBe(true);
+  });
+
   it('recalculates when salary changes', async () => {
     const user = userEvent.setup();
     render(App);
